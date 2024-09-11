@@ -21,7 +21,6 @@ def form_render():
   if(request.method == "GET"):
     return render_template("forms.html")
   elif(request.method=="POST"):
-    print("elif ke ander phuch gya mai")
     name = request.form['name']
     email = request.form['email']
     mobile = request.form['mobile']
@@ -78,7 +77,41 @@ def signup():
   if(request.method=="GET"):
     return render_template("signup.html")
   elif(request.method == "POST"):
-    return ("Abhi itna he banaya hai ")
+    username = request.form['username']
+    email = request.form['email']
+    password = request.form['password']
+    role = request.form['role']
+
+    try:
+      conn = connection()
+      cursor = conn.cursor()
+
+      cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+        person_id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role varchar(15) NOT NULL DEFAULT 'user',
+        created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (person_id) REFERENCES person(person_id)
+        ON UPDATE CASCADE
+        );
+        """
+      )
+      query_insert = 'INSERT INTO users(username, email, password, role) VALUES (%s,%s,%s,%s)'
+      cursor.execute(query_insert,(username,email,password,role))
+      conn.commit()
+      cursor.close()
+      conn.close()
+      print('One insert query has been successfully executed')
+      return jsonify({'message': 'Data inserted successfully!'})
+    
+    except Error as e:
+      return jsonify({'error': str(e)})
+
+
 
 
 @app.route("/login", methods = ["POST","GET"])
