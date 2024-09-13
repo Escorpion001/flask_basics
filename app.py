@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request,jsonify
+# IMPORTING LIBRARIES AND MODULES FROM PYTHON
+from flask import Flask, render_template, request,jsonify, redirect, url_for
+import bcrypt
 from mysql.connector import Error
 
+#  IMPORTING FUNCTIONS FROM OTHER FILES
 from connection import connection
 
+# CREATING AN INSTANCE OF FLASK
 app = Flask(__name__)
 
 # Preparing my first function of pushing data from form to backend database of aiven
@@ -10,7 +14,7 @@ app = Flask(__name__)
 def landing_page():
     return render_template("index.html")
 
-# Showing the Plans page
+# SHOWING THE PLANS PAGE
 @app.route("/plans")
 def plans():
   return render_template("plans.html")
@@ -40,7 +44,7 @@ def form_render():
 
       #Creating Table users if it don't exist
       cursor.execute("""CREATE TABLE IF NOT EXISTS person (
-    person_id INT AUTO_INCREMENT,        -- Auto-incrementing unique ID for each person
+    user_id INT AUTO_INCREMENT,        -- Auto-incrementing unique ID for each person
     name VARCHAR(100) NOT NULL,           -- Compulsory Name
     email VARCHAR(100) UNIQUE,            -- Unique Email
     mobile VARCHAR(14) NOT NULL,   -- Compulsory Mobile Number (Assuming 15-digit max for international format)
@@ -54,7 +58,9 @@ def form_render():
     disease VARCHAR(255) DEFAULT 'NA', -- Any chronic disease (NA if not)
     trainer varchar(32) NOT NULL, -- Trainer's Name
     join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Automatic current join date
-    PRIMARY KEY (person_id)               -- Setting person_id as primary key
+    PRIMARY KEY (user_id)               -- Setting user_id as primary key
+    FOREIGN KEY (user_id) REFERENCES person(person_id)
+    ON UPDATE CASCADE
 );
 """)
       
@@ -71,7 +77,7 @@ def form_render():
       return jsonify({'error': str(e)})
     
     
-# SIGNUP FOR USER
+# SIGNUP FOR USERS/TRAINERS AND STORING DATA IN USERS TABLE IN THE DATABASE
 @app.route("/signup", methods = ["POST","GET"])
 def signup():
   if(request.method=="GET"):
@@ -80,6 +86,8 @@ def signup():
     username = request.form['username']
     email = request.form['email']
     password = request.form['password']
+    hash_password = bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
+    hash_pass_str = hash_password.decode('utf-8')
     role = request.form['role']
 
     try:
@@ -89,19 +97,17 @@ def signup():
       cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-        person_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL,
         email VARCHAR(100) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         role varchar(15) NOT NULL DEFAULT 'user',
-        created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (person_id) REFERENCES person(person_id)
-        ON UPDATE CASCADE
+        created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
       )
-      query_insert = 'INSERT INTO users(username, email, password, role) VALUES (%s,%s,%s,%s)'
-      cursor.execute(query_insert,(username,email,password,role))
+      query_insert = 'INSERT INTO users(username, email, password, role) VALUES (%s,%s,%s,%s);'
+      cursor.execute(query_insert,(username,email,hash_pass_str,role))
       conn.commit()
       cursor.close()
       conn.close()
@@ -112,18 +118,38 @@ def signup():
       return jsonify({'error': str(e)})
 
 
-
-
+# LOGIN FOR USERS/TRAINERS/ADMIN AND VERIFYING DATA FROM THE DATA IN DATABASE
 @app.route("/login", methods = ["POST","GET"])
 def login():
   if (request.method== "GET"):
     return render_template("login.html")
+  
   elif(request.method == "POST"):
-    return ("abhi aage nhi banaya hai")
+    email = request.form['email']
+    password = request.form['password']
+    role = request.form['role']
+
+    conn = connection()
+    cursor = conn.cursor()
+
+    query = 'SELECT email, password, role FROM users WHERE email = %s AND role = %s '
+    cursor.execute(query,(email,role))
+    login_data = cursor.fetchone()
+    if login_data:
+      password_get= login_data[1]
+      pass_final = password_get.encode('utf-8')
+      if(bcrypt.checkpw(password.encode('utf-8'),pass_final)):
+        return (f"HO gya login {email}")
+      else:
+        return(f'Incorrect password for {email}')
+    else:
+      return ("NO USER FOUND!!!")
+    
+
 
 
 
 
 if __name__ == "__main__":
-  app.run(debug=True , port=5000)
+  app.run(debug=True , port=8000)
 
