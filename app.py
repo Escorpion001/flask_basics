@@ -33,7 +33,6 @@ def form_render():
     weight = request.form['weight']
     address = request.form['address']
     plan = request.form['plan']
-    password = request.form['password']
     confirm_password = request.form['confirm_password']
     disease = request.form['disease']
     trainer = request.form['trainer']
@@ -44,22 +43,18 @@ def form_render():
 
       #Creating Table users if it don't exist
       cursor.execute("""CREATE TABLE IF NOT EXISTS person (
-    user_id INT AUTO_INCREMENT,        -- Auto-incrementing unique ID for each person
     name VARCHAR(100) NOT NULL,           -- Compulsory Name
-    email VARCHAR(100) UNIQUE,            -- Unique Email
+    email VARCHAR(100) UNIQUE ,            -- Unique Email
     mobile VARCHAR(14) NOT NULL,   -- Compulsory Mobile Number (Assuming 15-digit max for international format)
     dob DATE NOT NULL,          -- Compulsory Date of Birth
     height DECIMAL(5,2),                  -- Height in cm (can handle up to 999.99 cm)
     weight DECIMAL(5,2),                  -- Weight in kg (can handle up to 999.99 kg)
     address TEXT NOT NULL,                -- Compulsory Address
     plan ENUM('Monthly', 'Quarterly', 'Yearly') NOT NULL, -- Plan (Dropdown options)
-    password VARCHAR(255) NOT NULL,       -- Compulsory Password
-    confirm_password VARCHAR(255) NOT NULL, -- Compulsory Confirm Password
     disease VARCHAR(255) DEFAULT 'NA', -- Any chronic disease (NA if not)
     trainer varchar(32) NOT NULL, -- Trainer's Name
     join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Automatic current join date
-    PRIMARY KEY (user_id)               -- Setting user_id as primary key
-    FOREIGN KEY (user_id) REFERENCES person(person_id)
+    FOREIGN KEY (email) REFERENCES users(email)
     ON UPDATE CASCADE
 );
 """)
@@ -71,7 +66,7 @@ def form_render():
       cursor.close()
       conn.close()
       print('One insert query has been successfully executed')
-      return jsonify({'message': 'Data inserted successfully!'})
+      return ('Bss yhi tk banaya hai')
     
     except Error as e:
       return jsonify({'error': str(e)})
@@ -145,6 +140,10 @@ def login():
     else:
       return ("NO USER FOUND!!!")
     
+
+@app.route("/payment")
+def payment():
+  return("This is the place where you need to pay!!!")
 
 
 
