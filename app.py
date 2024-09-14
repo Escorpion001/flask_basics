@@ -1,5 +1,5 @@
 # IMPORTING LIBRARIES AND MODULES FROM PYTHON
-from flask import Flask, render_template, request,jsonify, redirect, url_for
+from flask import Flask, render_template, request,jsonify, redirect, url_for,session
 import bcrypt
 from mysql.connector import Error
 
@@ -8,6 +8,7 @@ from connection import connection
 
 # CREATING AN INSTANCE OF FLASK
 app = Flask(__name__)
+app.secret_key = "samar_e_muqaatil"
 
 # Preparing my first function of pushing data from form to backend database of aiven
 @app.route("/")
@@ -23,7 +24,10 @@ def plans():
 @app.route("/forms", methods = ["POST","GET"])
 def form_render():
   if(request.method == "GET"):
-    return render_template("forms.html")
+    if 'user' in session:
+      return render_template("forms.html")
+    else :
+      return redirect(url_for('login'))
   elif(request.method=="POST"):
     name = request.form['name']
     email = request.form['email']
@@ -33,7 +37,6 @@ def form_render():
     weight = request.form['weight']
     address = request.form['address']
     plan = request.form['plan']
-    confirm_password = request.form['confirm_password']
     disease = request.form['disease']
     trainer = request.form['trainer']
 
@@ -70,6 +73,8 @@ def form_render():
     
     except Error as e:
       return jsonify({'error': str(e)})
+    
+   
     
     
 # SIGNUP FOR USERS/TRAINERS AND STORING DATA IN USERS TABLE IN THE DATABASE
@@ -134,6 +139,8 @@ def login():
       password_get= login_data[1]
       pass_final = password_get.encode('utf-8')
       if(bcrypt.checkpw(password.encode('utf-8'),pass_final)):
+        session['user'] = email
+        session['role'] = role
         return (f"HO gya login {email}")
       else:
         return(f'Incorrect password for {email}')
