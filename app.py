@@ -6,7 +6,7 @@ from mysql.connector import Error
 #  IMPORTING FUNCTIONS FROM OTHER FILES
 from connection import connection
 
-# CREATING AN INSTANCE OF FLASK
+# CREATING AN INSTANCE OF FLASK AND 
 app = Flask(__name__)
 app.secret_key = "samar_e_muqaatil"
 
